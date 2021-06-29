@@ -19,6 +19,7 @@ type entry struct {
 	value Value //允许值是实现了 Value 接口的任意类型
 }
 
+//被缓存的对象必须实现该接口
 type Value interface {
 	Len() int //记录value所使用的bytes
 }
