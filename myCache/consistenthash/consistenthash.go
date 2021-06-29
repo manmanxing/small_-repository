@@ -64,6 +64,7 @@ func (m *Map)Add(names ...string)  {
 	sort.Ints(m.keys)
 }
 
+//根据 key的哈希获取真实节点 ：ip + 端口
 func (m *Map)Get(key string)string  {
 	if len(m.keys) == 0 {
 		return ""

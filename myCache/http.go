@@ -25,9 +25,9 @@ type HTTPPool struct {
 	self     string //记录自己的地址
 	basePath string //路径前缀
 	mux      sync.Mutex
-	peers    *consistenthash.Map //用来根据具体的 key 选择节点。
+	peers    *consistenthash.Map //保存的是其他节点的哈希，用来根据具体的 key 选择节点。
 	//映射远程节点与对应的 httpGetter。每一个远程节点对应一个 httpGetter，因为 httpGetter 与远程节点的地址 baseURL 有关。
-	//key:远程节点的url
+	//key:远程节点的基本路径：ip+端口
 	httpGetter map[string]*httpGetter
 }
 
@@ -77,7 +77,7 @@ func (p *HTTPPool) Log(msg string) {
 
 //HTTP客户端实现
 type httpGetter struct {
-	baseURL string
+	baseURL string //ip+端口+/mycache/
 }
 
 //从节点查询缓存的具体实现
@@ -89,7 +89,9 @@ func (h *httpGetter) Get(group string, key string) ([]byte, error) {
 		return nil, err
 	}
 
-	defer res.Body.Close()
+	if res != nil {
+		defer res.Body.Close()
+	}
 
 	if res.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("server returned: %v", res.Status)
@@ -120,10 +122,12 @@ func (p *HTTPPool) Set(peers ...string) {
 	}
 }
 
+//通过 key的一致性哈希 获取其他节点的 Getter 函数
 func (p *HTTPPool) PickPeer(key string) (PeerGetter, bool) {
 	p.mux.Lock()
 	defer p.mux.Unlock()
 
+	//peer 非空且非自己
 	if peer := p.peers.Get(key); peer != "" && peer != p.self {
 		p.Log("pick peer " + peer)
 		return p.httpGetter[peer], true
