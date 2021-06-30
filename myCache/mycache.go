@@ -90,6 +90,7 @@ func (g *Group) Get(key string) (ByteView, error) {
 	return g.load(key)
 }
 
+//todo 防止缓存击穿
 func (g *Group) load(key string) (value ByteView, err error) {
 	//使用 PickPeer() 方法选择节点，若非本机节点，则调用 getFromPeer() 从远程获取。
 	//若是本机节点或失败，则回退到 getLocally()
